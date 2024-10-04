@@ -1,59 +1,37 @@
 const express = require("express");
-const { adminAuth } = require("../middlewares/auth");
-const bcrypt = require("bcrypt");
-
-const {
-  validateEditProfileData,
-  passwordValidation,
-} = require("../utils/validation");
-
 const profileRouter = express.Router();
 
-profileRouter.get("/profile/view", adminAuth, async (req, res) => {
+const { userAuth } = require("../middlewares/auth");
+const { validateEditProfileData } = require("../utils/validation");
+
+profileRouter.get("/profile/view", userAuth, async (req, res) => {
   try {
     const user = req.user;
+
     res.send(user);
-  } catch (error) {
-    res.status(400).send("Something went wrong" + error.message);
+  } catch (err) {
+    res.status(400).send("ERROR : " + err.message);
   }
 });
 
-profileRouter.patch("/profile/edit", adminAuth, async (req, res) => {
+profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
   try {
     if (!validateEditProfileData(req)) {
-      throw new Error("Can't edit this field");
+      throw new Error("Invalid Edit Request");
     }
+
     const loggedInUser = req.user;
-    Object.keys(req.body).forEach((key) => (loggedInUser[key] = req.body[key])); //edit logic
+
+    Object.keys(req.body).forEach((key) => (loggedInUser[key] = req.body[key]));
+
     await loggedInUser.save();
+
     res.json({
-      message: `Hey ${loggedInUser.firstName}, your profile has been updated successfully`,
+      message: `${loggedInUser.firstName}, your profile updated successfuly`,
       data: loggedInUser,
     });
-  } catch (error) {
-    res.status(400).send("Something went wrong " + error.message);
-  }
-});
-profileRouter.patch("/profile/changePassword", adminAuth, async (req, res) => {
-  try {
-    if (!passwordValidation(req)) {
-      throw new Error("Can't edit this field");
-    }
-    const loggedInUser = req.user;
-    const { password, newPassword } = req.body;
-    const isPasswordConfirmed = await bcrypt.compare(password, loggedInUser.password);
-    if (!isPasswordConfirmed) {
-      return res.status(400).json({ error: "Current password is incorrect." });
-    }
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    loggedInUser.password = hashedPassword;
-    await loggedInUser.save();
-    res.json({
-      message: `Hey ${loggedInUser.firstName}, your password was updated successfully`,
-      data: loggedInUser,
-    });
-  } catch (error) {
-    res.status(400).send("Something went wrong " + error.message);
+  } catch (err) {
+    res.status(400).send("ERROR : " + err.message);
   }
 });
 
