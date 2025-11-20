@@ -1,193 +1,177 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  FiHome,
-  FiUser,
-  FiHeart,
-  FiUsers,
-  FiMenu,
-  FiX,
-  FiLogOut,
-  FiMessageCircle,
-} from "react-icons/fi";
-import { useAuth } from "../../context/AuthContext";
-import { useChat } from "../../context/ChatContext";
-import { authAPI } from "../../services/api";
-import toast from "react-hot-toast";
+import { useState } from 'react';
+import { FiHome, FiUser, FiMessageCircle, FiUsers, FiMenu, FiX, FiLogOut } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
+import { useChat } from '../../context/ChatContext'; // Add this import
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [visible, setVisible] = useState(true);
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
-
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
-  const { toggleChatList } = useChat();
+  const { toggleChatList } = useChat(); // Use ChatContext
+  
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = async () => {
-    try {
-      await authAPI.logout();
-      logout();
-      navigate("/login");
-      toast.success("Logged out successfully!");
-    } catch (error) {
-      toast.error("Error logging out");
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
-  const handleScroll = useCallback(() => {
-    const currentScrollY = window.scrollY;
-    if (!ticking.current) {
-      window.requestAnimationFrame(() => {
-        if (currentScrollY === 0 || currentScrollY < lastScrollY.current) {
-          setVisible(true);
-        } else if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
-          setVisible(false);
-        }
-        lastScrollY.current = currentScrollY;
-        ticking.current = false;
-      });
-      ticking.current = true;
-    }
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
-
-  useEffect(() => setIsOpen(false), [location.pathname]);
+  const handleChatClick = () => {
+    toggleChatList(); // Use ChatContext function
+  };
 
   const navItems = [
-    { path: "/feed", label: "Feed", icon: FiHome },
-    { path: "/profile", label: "Profile", icon: FiUser },
-    { path: "/requests", label: "Requests", icon: FiHeart },
-    { path: "/connections", label: "Connections", icon: FiUsers },
+    { icon: FiHome, label: 'Home', path: '/feed' },
+    { icon: FiUsers, label: 'Connections', path: '/connections' },
+    { icon: FiUser, label: 'Profile', path: '/profile' },
   ];
 
-  if (!user) return null;
-
   return (
-    <AnimatePresence mode="wait">
-      {visible && (
-        <motion.nav
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -100, opacity: 0 }}
-          transition={{ duration: 0.25 }}
-          className="fixed top-0 left-0 right-0 z-50 glass-card m-4 rounded-2xl"
-        >
-          <div className="flex items-center justify-between px-6 py-4">
-            <Link to="/feed" className="text-2xl font-bold text-white">
-              <span className="text-blue-500">Dev</span>
-              <span className="text-pink-500">Match</span>
-            </Link>
+    <>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-gray-800/50 backdrop-blur-md border-b border-white/10 p-4 z-40">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <FiMenu size={20} />
+          </button>
+          
+          <h1 className="text-xl font-bold text-white">DevMatch</h1>
+          
+          <button
+            onClick={handleChatClick}
+            className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors relative"
+          >
+            <FiMessageCircle size={20} />
+          </button>
+        </div>
+      </div>
 
-            <div className="hidden md:flex items-center space-x-4">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30">
+        <div className="flex-1 flex flex-col min-h-0 bg-gray-800/50 backdrop-blur-md border-r border-white/10">
+          <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+            <div className="flex items-center justify-center px-4 mb-8">
+              <h1 className="text-2xl font-bold text-white">DevMatch</h1>
+            </div>
+            
+            <nav className="mt-8 flex-1 px-4 space-y-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
+                
                 return (
-                  <Link
+                  <button
                     key={item.path}
-                    to={item.path}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                    onClick={() => navigate(item.path)}
+                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                       isActive
-                        ? "bg-white/20 text-white"
-                        : "text-white/70 hover:text-white hover:bg-white/10"
+                        ? 'bg-purple-600 text-white shadow-lg'
+                        : 'text-gray-300 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    <Icon size={18} />
-                    <span>{item.label}</span>
-                  </Link>
+                    <Icon size={20} className="mr-3" />
+                    {item.label}
+                  </button>
                 );
               })}
-
+              
+              {/* Chat Button in Sidebar */}
               <button
-                onClick={toggleChatList}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200"
+                onClick={handleChatClick}
+                className="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
               >
-                <FiMessageCircle size={18} />
-                <span>Chat</span>
+                <FiMessageCircle size={20} className="mr-3" />
+                Messages
               </button>
-
+            </nav>
+          </div>
+          
+          {/* User Section */}
+          <div className="flex-shrink-0 flex border-t border-white/10 p-4">
+            <div className="flex items-center w-full">
+              <div className="flex-shrink-0">
+                <img
+                  className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400"
+                  src={user?.photoUrl || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=8b5cf6&color=fff`}
+                  alt={user?.firstName}
+                />
+              </div>
+              <div className="ml-3 min-w-0 flex-1">
+                <p className="text-sm font-medium text-white truncate">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <p className="text-sm text-gray-400 truncate">
+                  @{user?.username}
+                </p>
+              </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200"
+                className="ml-3 p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                title="Logout"
               >
-                <FiLogOut size={18} />
-                <span>Logout</span>
+                <FiLogOut size={16} />
               </button>
             </div>
-
-            {/* Mobile Menu */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden text-white p-2"
-            >
-              {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-            </button>
           </div>
+        </div>
+      </div>
 
-          <AnimatePresence>
-            {isOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="md:hidden border-t border-white/20 px-6 py-4 space-y-2 overflow-hidden"
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setIsSidebarOpen(false)} />
+          <div className="fixed inset-y-0 left-0 w-64 bg-gray-800/95 backdrop-blur-md border-r border-white/10">
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <h2 className="text-lg font-semibold text-white">Menu</h2>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
               >
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                        isActive
-                          ? "bg-white/20 text-white"
-                          : "text-white/70 hover:text-white hover:bg-white/10"
-                      }`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Icon size={20} />
-                      <span>{item.label}</span>
-                    </Link>
-                  );
-                })}
-
-                <button
-                  onClick={() => {
-                    toggleChatList();
-                    setIsOpen(false);
-                  }}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200 w-full"
-                >
-                  <FiMessageCircle size={18} />
-                  <span>Chat</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsOpen(false);
-                  }}
-                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200 w-full text-left"
-                >
-                  <FiLogOut size={20} />
-                  <span>Logout</span>
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.nav>
+                <FiX size={20} />
+              </button>
+            </div>
+            <nav className="p-4 space-y-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => {
+                      navigate(item.path);
+                      setIsSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                      isActive
+                        ? 'bg-purple-600 text-white shadow-lg'
+                        : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <Icon size={20} className="mr-3" />
+                    {item.label}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => {
+                  handleChatClick();
+                  setIsSidebarOpen(false);
+                }}
+                className="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+              >
+                <FiMessageCircle size={20} className="mr-3" />
+                Messages
+              </button>
+            </nav>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 };
 

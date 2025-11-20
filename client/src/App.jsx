@@ -17,7 +17,7 @@ function App() {
       <ChatProvider>
         <Router>
           <Routes>
-            {/* <Route path="/login" element={<LoginPage />} /> */}
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/" element={<Navigate to="/feed" replace />} />
             <Route

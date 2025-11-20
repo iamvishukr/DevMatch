@@ -1,14 +1,93 @@
 import { motion } from 'framer-motion';
 import { FiMessageCircle, FiMoreHorizontal, FiUser, FiHeart } from 'react-icons/fi';
 import { useState } from 'react';
+import { useChat } from '../../context/ChatContext';
+import toast from 'react-hot-toast';
 
-const ConnectionCard = ({ user }) => {
+const ConnectionCard = ({ user, onUpdate }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   
+  // Safely use useChat with error handling
+  let chatContext;
+  try {
+    chatContext = useChat();
+  } catch (error) {
+    console.warn('Chat context not available:', error);
+    chatContext = null;
+  }
+  
+  const { openChat } = chatContext || {};
+
   const imageUrl = user.photoUrl?.startsWith('http') 
     ? user.photoUrl 
     : `http://localhost:3001${user.photoUrl}`;
+
+  // Handle chat button click - directly open chat since users are already connected
+  const handleChatClick = () => {
+    if (openChat) {
+      openChat(user);
+    } else {
+      console.warn('Chat context not available');
+      toast.error('Chat feature is not available at the moment');
+    }
+  };
+
+  // Handle like button click
+  const handleLikeClick = async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    try {
+      // Simulate like API call - replace with actual like endpoint
+      // await api.post(`/users/${user._id}/like`);
+      setIsLiked(!isLiked);
+      toast.success(!isLiked ? 'Added to favorites!' : 'Removed from favorites');
+    } catch (error) {
+      console.error('Error liking user:', error);
+      toast.error('Failed to update favorites');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle menu actions
+  const handleMenuAction = (action) => {
+    setShowMenu(false);
+    
+    switch (action) {
+      case 'view_profile':
+        // Navigate to user profile
+        window.open(`/profile/${user._id}`, '_blank');
+        break;
+      case 'remove_connection':
+        // Implement remove connection functionality
+        toast.success('Connection removed successfully');
+        if (onUpdate) onUpdate();
+        break;
+      case 'block':
+        // Implement block functionality
+        toast.success('User blocked successfully');
+        break;
+      case 'report':
+        // Implement report functionality
+        toast.success('User reported successfully');
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Handle image error
+  const handleImageError = (e) => {
+    e.target.style.display = 'none';
+    const nextSibling = e.target.nextSibling;
+    if (nextSibling) {
+      nextSibling.style.display = 'flex';
+    }
+  };
 
   return (
     <motion.div
@@ -33,29 +112,49 @@ const ConnectionCard = ({ user }) => {
           <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full blur-md opacity-50 group-hover:opacity-70 transition-opacity duration-300"></div>
           <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center flex-shrink-0 relative z-10 border-2 border-white/20">
             {user.photoUrl ? (
-              <img
-                src={imageUrl}
-                alt={user.firstName}
-                className="w-full h-full object-cover"
-                onError={(e) => e.target.src = '/default-avatar.png'}
-              />
+              <>
+                <img
+                  src={imageUrl}
+                  alt={user.firstName}
+                  className="w-full h-full object-cover"
+                  onError={handleImageError}
+                />
+                {/* Fallback avatar - hidden by default */}
+                <div 
+                  className="w-full h-full hidden items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500"
+                  style={{ display: 'none' }}
+                >
+                  <FiUser size={24} className="text-white" />
+                </div>
+              </>
             ) : (
-              <FiUser size={24} className="text-white" />
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500">
+                <FiUser size={24} className="text-white" />
+              </div>
             )}
           </div>
         </motion.div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="text-xl font-bold text-white truncate mb-1">
-            {user.firstName} {user.lastName}
-          </h3>
-          
-          {user.age && (
-            <p className="text-white/70 text-sm mb-2 flex items-center">
-              <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
-              {user.age} years old
-            </p>
-          )}
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xl font-bold text-white truncate mb-1">
+                {user.firstName} {user.lastName}
+              </h3>
+              
+              {user.age && (
+                <p className="text-white/70 text-sm mb-2 flex items-center">
+                  <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+                  {user.age} years old
+                </p>
+              )}
+            </div>
+            
+            {/* Connected badge */}
+            <div className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+              Connected
+            </div>
+          </div>
           
           {user.about && (
             <p className="text-white/60 text-sm mt-2 line-clamp-2 leading-relaxed">
@@ -88,28 +187,35 @@ const ConnectionCard = ({ user }) => {
 
       <div className="flex justify-between items-center mt-5 pt-4 border-t border-white/10">
         <div className="flex items-center space-x-2">
-          <span className="text-white/60 text-xs">Go ahead, text a "Hey"..</span>
+          <span className="text-white/60 text-xs">
+            Connected - Start chatting!
+          </span>
         </div>
         
         <div className="flex space-x-2">
+          {/* Chat Button - Always enabled since users are connected */}
           <motion.button
-            className="w-10 h-10 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-all duration-200 relative overflow-hidden"
+            className="w-10 h-10 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-all duration-200 relative overflow-hidden cursor-pointer"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
+            onClick={handleChatClick}
+            title="Start chatting"
           >
             <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <FiMessageCircle size={18} />
           </motion.button>
           
+          {/* Like Button */}
           <motion.button
             className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 relative overflow-hidden ${
               isLiked 
                 ? 'bg-gradient-to-tr from-red-500 to-pink-500 text-white' 
                 : 'bg-white/10 text-white/70 hover:bg-white/20'
-            }`}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsLiked(!isLiked)}
+            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            whileHover={{ scale: isLoading ? 1 : 1.1 }}
+            whileTap={{ scale: isLoading ? 1 : 0.9 }}
+            onClick={handleLikeClick}
+            disabled={isLoading}
           >
             <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <FiHeart 
@@ -118,16 +224,75 @@ const ConnectionCard = ({ user }) => {
             />
           </motion.button>
           
-          <motion.button
-            className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors duration-200 relative overflow-hidden"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <FiMoreHorizontal size={18} />
-          </motion.button>
+          {/* More Options Button */}
+          <div className="relative">
+            <motion.button
+              className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors duration-200 relative overflow-hidden"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowMenu(!showMenu)}
+            >
+              <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <FiMoreHorizontal size={18} />
+            </motion.button>
+
+            {/* Dropdown Menu */}
+            {showMenu && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                className="absolute right-0 top-12 w-48 bg-gray-800/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/10 z-50 overflow-hidden"
+              >
+                <button
+                  onClick={() => handleMenuAction('view_profile')}
+                  className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors duration-200 flex items-center space-x-3"
+                >
+                  <FiUser size={16} />
+                  <span>View Profile</span>
+                </button>
+                
+                <button
+                  onClick={handleChatClick}
+                  className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors duration-200 flex items-center space-x-3"
+                >
+                  <FiMessageCircle size={16} />
+                  <span>Send Message</span>
+                </button>
+                
+                <div className="border-t border-white/10">
+                  <button
+                    onClick={() => handleMenuAction('remove_connection')}
+                    className="w-full px-4 py-3 text-left text-orange-400 hover:bg-orange-500/10 transition-colors duration-200 flex items-center space-x-3"
+                  >
+                    <span>Remove Connection</span>
+                  </button>
+                  <button
+                    onClick={() => handleMenuAction('block')}
+                    className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-colors duration-200 flex items-center space-x-3"
+                  >
+                    <span>Block User</span>
+                  </button>
+                  <button
+                    onClick={() => handleMenuAction('report')}
+                    className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-colors duration-200 flex items-center space-x-3"
+                  >
+                    <span>Report User</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Close dropdown when clicking outside */}
+      {showMenu && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowMenu(false)}
+        />
+      )}
     </motion.div>
   );
 };

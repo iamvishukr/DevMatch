@@ -1,18 +1,11 @@
-// Layout.jsx
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import ChatModal from "../../pages/Chat";
-import { useChat } from "../../context/ChatContext"; // Add this import
+import { motion } from "framer-motion";
 
 const Layout = () => {
-  const [chatUser, setChatUser] = useState(null);
-  const { openChat } = useChat(); // Get openChat from ChatContext
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-gray-900">
-      {/* Navbar doesn't need onOpenChat prop anymore since we're using ChatContext */}
+      {/* Navbar uses ChatContext internally */}
       <Navbar />
       
       <main className="pt-20">
@@ -21,19 +14,13 @@ const Layout = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <Outlet context={{ onOpenChat: openChat }} />
+          {/* Outlet doesn't need chat context passed - components can use useChat() directly */}
+          <Outlet />
         </motion.div>
       </main>
 
-      {/* Chat modal (global, sits on top of everything) */}
-      <AnimatePresence>
-        {chatUser && (
-          <ChatModal
-            user={chatUser}
-            onClose={() => setChatUser(null)}
-          />
-        )}
-      </AnimatePresence>
+      {/* Chat modal is now handled by ChatContext provider in App.jsx */}
+      {/* Remove the local chat modal since ChatContext handles it globally */}
     </div>
   );
 };

@@ -38,9 +38,9 @@ const UserCard = forwardRef(({ user, onAction }, ref) => {
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0.95, opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="glass-card max-w-sm mx-auto overflow-hidden shadow-lg border border-white/20"
+      className="glass-card rounded-t-2xl max-w-sm mx-auto overflow-hidden shadow-lg border border-white/20"
     >
-      <div className="relative h-80 rounded-xl overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
+      <div className="relative h-80 rounded--t-2xl  overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
         <img
           src={
             user.photoUrl?.startsWith("http")

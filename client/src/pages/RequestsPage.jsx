@@ -19,7 +19,8 @@ const RequestsPage = () => {
       const response = await requestAPI.getReceivedRequests();
       setRequests(response.data.data);
     } catch (error) {
-      toast.error("Failed to load requests");
+      console.log("Error", error)
+      toast.error("Something went wrong, Please check your internet connection");
     } finally {
       setLoading(false);
     }

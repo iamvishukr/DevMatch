@@ -1,10 +1,8 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "";
-
-const socket = io(SOCKET_URL, {
-  autoConnect: false,
+const socket = io("http://localhost:3001", {
   withCredentials: true,
+  autoConnect: true,
 });
 
 export default socket;

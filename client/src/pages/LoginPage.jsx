@@ -2,9 +2,18 @@ import { Link, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import LoginForm from "../components/auth/LoginForm";
 import { useAuth } from "../context/AuthContext";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 
 const LoginPage = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth(); 
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 to-gray-900 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   if (user) {
     return <Navigate to="/feed" replace />;
@@ -18,7 +27,6 @@ const LoginPage = () => {
         transition={{ duration: 0.6 }}
         className="w-full max-w-lg rounded-2xl shadow-2xl bg-white/10 backdrop-blur-lg border border-white/20 p-8"
       >
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -27,7 +35,7 @@ const LoginPage = () => {
         >
           <h1 className="text-4xl font-bold mb-2">
             <span className="text-blue-500">Dev</span>
-            <span className="text-pink-500">Match</span>
+            <span className="text-purple-500">Match</span>
           </h1>
           <h3 className="text-2xl font-semibold text-white mb-2">
             Welcome Back
@@ -37,7 +45,6 @@ const LoginPage = () => {
           </p>
         </motion.div>
 
-        {/* Form */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -46,7 +53,6 @@ const LoginPage = () => {
           <LoginForm />
         </motion.div>
 
-        {/* Footer */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -54,10 +60,10 @@ const LoginPage = () => {
           className="text-center mt-6"
         >
           <p className="text-white/80 text-sm">
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <Link
               to="/signup"
-              className="text-primary-300 hover:text-primary-200 font-medium"
+              className="text-blue-300 hover:text-blue-200 font-medium"
             >
               Sign Up
             </Link>

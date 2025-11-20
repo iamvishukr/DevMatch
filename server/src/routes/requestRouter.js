@@ -78,6 +78,24 @@ requestRouter.post(
   }
 );
 
+requestRouter.get("/user/requests/received", userAuth, async (req, res) => {
+  try {
+    const loggedInUserId = req.user._id;
+
+    const requests = await ConnectionRequest.find({
+      toUserId: loggedInUserId,
+      status: "interested",
+    }).populate("fromUserId", "firstName lastName age gender photoUrl about skills");
+
+    res.json({
+      message: "Received requests fetched successfully",
+      data: requests,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching requests", error: err.message });
+  }
+});
+
 requestRouter.post(
   "/request/review/:status/:requestId",
   userAuth,

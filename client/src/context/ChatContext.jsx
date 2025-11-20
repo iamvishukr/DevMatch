@@ -7,20 +7,23 @@ import ChatList from "../components/chatList/ChatList";
 const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
-  const [activeUser, setActiveUser] = useState(null); 
+  const [activeUser, setActiveUser] = useState(null);
   const [showChatList, setShowChatList] = useState(false);
   const { user: currentUser } = useAuth();
 
   const openChat = useCallback((user) => {
     setActiveUser(user);
-    setShowChatList(false); 
+    setShowChatList(false);
   }, []);
 
   const closeChat = useCallback(() => setActiveUser(null), []);
+
   const toggleChatList = useCallback(() => {
     setShowChatList((prev) => !prev);
-    setActiveUser(null); 
+    setActiveUser(null);
   }, []);
+
+  const closeChatList = useCallback(() => setShowChatList(false), []);
 
   return (
     <ChatContext.Provider
@@ -28,13 +31,16 @@ export const ChatProvider = ({ children }) => {
         openChat,
         closeChat,
         toggleChatList,
+        closeChatList,
         showChatList,
         activeUser,
       }}
     >
       {children}
 
-      {showChatList && <ChatList />}
+      <AnimatePresence>
+        {showChatList && <ChatList onClose={closeChatList} />}
+      </AnimatePresence>
 
       <AnimatePresence>
         {activeUser && currentUser && (
@@ -43,6 +49,7 @@ export const ChatProvider = ({ children }) => {
             user={activeUser}
             currentUser={currentUser}
             onClose={closeChat}
+            onBack={closeChat}
           />
         )}
       </AnimatePresence>

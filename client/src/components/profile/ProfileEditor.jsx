@@ -295,10 +295,10 @@ const ProfileEditor = ({ isEditing, onToggleEdit }) => {
           {loading ? (
             <LoadingSpinner size="sm" />
           ) : (
-            <button className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-full px-6 py-2 shadow-md hover:from-purple-600 hover:to-blue-500 transition-all duration-300">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-full px-6 py-2 shadow-md hover:from-purple-600 hover:to-blue-500 transition-all duration-300">
               <FiSave size={18} />
               <span>Save Changes</span>
-            </button>
+            </div>
           )}
         </motion.button>
       </form>

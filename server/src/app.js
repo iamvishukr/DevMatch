@@ -5,7 +5,7 @@ const cors = require("cors");
 require("dotenv").config();
 const http = require("http");
 const { Server } = require("socket.io");
-
+const Message = require("./models/Message");
 
 const app = express();
 const allowedOrigin = process.env.BASE_URL || "http://localhost:5173";
@@ -13,7 +13,7 @@ const allowedOrigin = process.env.BASE_URL || "http://localhost:5173";
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); 
+      if (!origin) return callback(null, true);
       const allowedOrigins = [
         "http://localhost:5173",
         "http://localhost:3000",
@@ -48,13 +48,13 @@ app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
-app.use("/", chatRouter);
+app.use("/api", chatRouter);
 
 const PORT = process.env.PORT || 3001;
 
 connectDB()
   .then(() => {
-    console.log(" Database connected");
+    console.log("✅ Database connected");
 
     const server = http.createServer(app);
 
@@ -76,23 +76,30 @@ connectDB()
 
       socket.on("sendMessage", async ({ from, to, text }) => {
         try {
-          const Message = require("./models/Message");
           const msg = await Message.create({ from, to, text });
+          
+          // Populate the message with user data
+          const populatedMsg = await Message.findById(msg._id)
+            .populate('from', 'firstName lastName username photoUrl')
+            .populate('to', 'firstName lastName username photoUrl');
+          
+          console.log("📩 Message saved and broadcasting:", populatedMsg._id);
 
-          io.to(from).emit("receiveMessage", msg);
-          io.to(to).emit("receiveMessage", msg);
+          // Emit to both users
+          io.to(from).emit("receiveMessage", populatedMsg);
+          io.to(to).emit("receiveMessage", populatedMsg);
         } catch (err) {
           console.error("❌ Failed to save message:", err);
         }
       });
 
       socket.on("disconnect", () => {
-        console.log(" User disconnected:", socket.id);
+        console.log("🔌 User disconnected:", socket.id);
       });
     });
 
     server.listen(PORT, () =>
-      console.log(` Server running on http://localhost:${PORT}`)
+      console.log(`🚀 Server running on http://localhost:${PORT}`)
     );
   })
-  .catch((err) => console.error("DB connection failed", err));
+  .catch((err) => console.error("❌ DB connection failed", err));

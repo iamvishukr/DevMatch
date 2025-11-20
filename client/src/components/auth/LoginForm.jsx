@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../common/LoadingSpinner';
 
+// Enhanced LoginForm component
 const LoginForm = () => {
   const [formData, setFormData] = useState({
     emailId: '',
@@ -49,7 +50,7 @@ const LoginForm = () => {
       <div className="relative group">
         <FiMail
           className="absolute left-3 top-1/2 transform -translate-y-1/2 
-                     text-white/70 group-focus-within:text-black transition-colors"
+                     text-white/70 group-focus-within:text-blue-500 transition-colors"
         />
         <input
           type="email"
@@ -57,9 +58,9 @@ const LoginForm = () => {
           placeholder="Email Address"
           value={formData.emailId}
           onChange={handleChange}
-          className="input-glass pl-10 w-full border border-white/70 rounded-2xl p-2 
-                     text-white placeholder-gray-300 
-                     focus:bg-white focus:text-black focus:placeholder-gray-500"
+          className="input-glass pl-10 w-full border border-white/30 rounded-xl p-3 
+                     text-white placeholder-gray-300 bg-white/5
+                     focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500"
           required
         />
       </div>
@@ -68,7 +69,7 @@ const LoginForm = () => {
       <div className="relative group">
         <FiLock
           className="absolute left-3 top-1/2 transform -translate-y-1/2 
-                     text-white/70 group-focus-within:text-black transition-colors"
+                     text-white/70 group-focus-within:text-blue-500 transition-colors"
         />
         <input
           type={showPassword ? 'text' : 'password'}
@@ -76,16 +77,16 @@ const LoginForm = () => {
           placeholder="Password"
           value={formData.password}
           onChange={handleChange}
-          className="input-glass pl-10 pr-10 w-full border border-white/70 rounded-2xl p-2 
-                     text-white placeholder-gray-300 
-                     focus:bg-white focus:text-black focus:placeholder-gray-500"
+          className="input-glass pl-10 pr-10 w-full border border-white/30 rounded-xl p-3 
+                     text-white placeholder-gray-300 bg-white/5
+                     focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500"
           required
         />
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
           className="absolute right-3 top-1/2 transform -translate-y-1/2 
-                     text-white/70 group-focus-within:text-black hover:text-gray-700 transition-colors"
+                     text-white/70 hover:text-blue-400 transition-colors"
         >
           {showPassword ? <FiEyeOff /> : <FiEye />}
         </button>
@@ -95,14 +96,16 @@ const LoginForm = () => {
       <motion.button
         type="submit"
         disabled={loading}
-        className="btn-primary w-full flex items-center justify-center space-x-2"
+        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 
+                   rounded-xl font-medium flex items-center justify-center space-x-2
+                   hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
         {loading ? (
           <LoadingSpinner size="sm" />
         ) : (
-          <span className="text-white">Sign In</span>
+          <span>Sign In</span>
         )}
       </motion.button>
     </motion.form>
