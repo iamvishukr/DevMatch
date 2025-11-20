@@ -8,22 +8,34 @@ const { Server } = require("socket.io");
 const Message = require("./models/Message");
 
 const app = express();
-const allowedOrigin = process.env.BASE_URL || "https://devmatchus.vercel.app/";
 
+// ---- CLEAN BASE URL ----
+const BASE_URL = (process.env.BASE_URL || "https://devmatchus.vercel.app")
+  .replace(/\/$/, "");
+
+// ---- ALLOWED ORIGINS ----
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  BASE_URL
+].filter(Boolean);
+
+console.log("✨ Allowed Origins:", allowedOrigins);
+
+// ---- EXPRESS CORS ----
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      const allowedOrigins = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        process.env.BASE_URL,
-      ].filter(Boolean);
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
+      if (!origin) return callback(null, true); // Allow server-to-server or curl
+
+      const cleanOrigin = origin.replace(/\/$/, "");
+
+      if (allowedOrigins.includes(cleanOrigin)) {
+        return callback(null, true);
       }
+
+      console.log("❌ BLOCKED ORIGIN:", origin);
+      callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
@@ -33,11 +45,13 @@ app.use(
 
 app.options("*", cors());
 
+// ---- MIDDLEWARE ----
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 app.use("/uploads", express.static("uploads"));
 
+// ---- ROUTES ----
 const authRouter = require("./routes/authRouter");
 const profileRouter = require("./routes/profileRouter");
 const requestRouter = require("./routes/requestRouter");
@@ -52,20 +66,23 @@ app.use("/api", chatRouter);
 
 const PORT = process.env.PORT || 3001;
 
+// ---- DATABASE + SERVER + SOCKET.IO ----
 connectDB()
   .then(() => {
     console.log("✅ Database connected");
 
     const server = http.createServer(app);
 
+    // ---- SOCKET.IO CORS MUST MATCH EXPRESS ----
     const io = new Server(server, {
       cors: {
-        origin: allowedOrigin,
+        origin: allowedOrigins,
         methods: ["GET", "POST"],
         credentials: true,
       },
     });
 
+    // ---- SOCKET.IO EVENTS ----
     io.on("connection", (socket) => {
       console.log("⚡ User connected:", socket.id);
 
@@ -77,15 +94,13 @@ connectDB()
       socket.on("sendMessage", async ({ from, to, text }) => {
         try {
           const msg = await Message.create({ from, to, text });
-          
-          // Populate the message with user data
+
           const populatedMsg = await Message.findById(msg._id)
-            .populate('from', 'firstName lastName username photoUrl')
-            .populate('to', 'firstName lastName username photoUrl');
-          
+            .populate("from", "firstName lastName username photoUrl")
+            .populate("to", "firstName lastName username photoUrl");
+
           console.log("📩 Message saved and broadcasting:", populatedMsg._id);
 
-          // Emit to both users
           io.to(from).emit("receiveMessage", populatedMsg);
           io.to(to).emit("receiveMessage", populatedMsg);
         } catch (err) {
@@ -98,6 +113,7 @@ connectDB()
       });
     });
 
+    // ---- START SERVER ----
     server.listen(PORT, () =>
       console.log(`🚀 Server running on http://localhost:${PORT}`)
     );
