@@ -8,7 +8,7 @@ const { Server } = require("socket.io");
 const Message = require("./models/Message");
 
 const app = express();
-const allowedOrigin = process.env.BASE_URL || "http://localhost:5173";
+const allowedOrigin = process.env.BASE_URL || "https://devmatchus.vercel.app/";
 
 app.use(
   cors({
